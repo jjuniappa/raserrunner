@@ -1,0 +1,10 @@
+{
+  "name": "Laser Runner",
+  "short_name": "Laser Runner",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "landscape",
+  "icons": []
+}
