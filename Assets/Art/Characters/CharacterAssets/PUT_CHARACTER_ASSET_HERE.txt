@@ -1,0 +1,2 @@
+추후 캐릭터 FBX/GLB/프리팹/텍스처를 이 폴더에 넣으세요.
+PlayerVisualRoot 아래의 PlaceholderBlock을 비활성화하고 캐릭터 프리팹을 자식으로 배치하면 됩니다.
