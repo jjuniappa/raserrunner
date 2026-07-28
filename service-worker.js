@@ -1,4 +1,4 @@
-const CACHE_NAME = "laser-runner-v1";
+const CACHE_NAME = "laser-runner-v3";
 const FILES = [
   "./",
   "./index.html",

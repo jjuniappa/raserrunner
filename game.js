@@ -278,13 +278,17 @@
     for (const laser of state.lasers) {
       const p = perspectivePoint(laser.progress);
       const roadWidth = width * (0.18 + 0.78 * Math.min(1, laser.progress) ** 2);
-      const laserY = p.y - (laser.type === "high" ? 58 * p.scale : 13 * p.scale);
+      // low: 발목/바닥 높이 → 점프
+      // high: 가슴/머리 높이 → 슬라이딩
+      const lowOffset = 6 + 9 * p.scale;
+      const highOffset = 55 + 105 * p.scale;
+      const laserY = p.y - (laser.type === "high" ? highOffset : lowOffset);
 
       ctx.save();
-      ctx.shadowColor = "rgba(255,0,0,.7)";
-      ctx.shadowBlur = Math.max(4, 15 * p.scale);
+      ctx.shadowColor = "rgba(255,0,0,.75)";
+      ctx.shadowBlur = Math.max(5, 17 * p.scale);
       ctx.strokeStyle = "#ff1010";
-      ctx.lineWidth = Math.max(3, 8 * p.scale);
+      ctx.lineWidth = Math.max(4, 9 * p.scale);
       ctx.beginPath();
       ctx.moveTo(cx + roadWidth * 0.5, laserY);
       ctx.lineTo(cx - roadWidth * 0.5, laserY);
@@ -292,9 +296,22 @@
       ctx.restore();
 
       ctx.fillStyle = "#111";
-      const machineSize = Math.max(5, 13 * p.scale);
+      const machineSize = Math.max(6, 15 * p.scale);
       ctx.fillRect(cx - roadWidth * 0.5 - machineSize, laserY - machineSize / 2, machineSize, machineSize);
       ctx.fillRect(cx + roadWidth * 0.5, laserY - machineSize / 2, machineSize, machineSize);
+
+      if (laser.progress > 0.35 && laser.progress < 0.82) {
+        ctx.save();
+        ctx.font = `900 ${Math.max(11, 14 * p.scale)}px Arial`;
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#111";
+        ctx.fillText(
+          laser.type === "high" ? "SLIDE" : "JUMP",
+          cx,
+          laserY - Math.max(12, 20 * p.scale)
+        );
+        ctx.restore();
+      }
     }
   }
 
