@@ -8,9 +8,15 @@ public class PrototypeSceneBuilder : MonoBehaviour
 
     private void Start()
     {
+        if (FindObjectOfType<MobileBootstrap>() == null)
+            new GameObject("MobileBootstrap").AddComponent<MobileBootstrap>();
+
+        if (FindObjectOfType<GameManager>() == null)
+            new GameObject("GameManager").AddComponent<GameManager>();
+
         CreateFloor();
         CreatePlayerPlaceholder();
-        CreateLaserPrefabExample();
+        CreateLaserExample();
     }
 
     private void CreateFloor()
@@ -34,7 +40,7 @@ public class PrototypeSceneBuilder : MonoBehaviour
         controller.radius = 0.4f;
         controller.center = new Vector3(0f, 1f, 0f);
 
-        player.AddComponent<PlayerController>();
+        player.AddComponent<MobilePlayerController>();
 
         GameObject visualRoot = new GameObject("PlayerVisualRoot");
         visualRoot.transform.SetParent(player.transform);
@@ -50,7 +56,7 @@ public class PrototypeSceneBuilder : MonoBehaviour
             block.GetComponent<Renderer>().material = environmentMaterial;
     }
 
-    private void CreateLaserPrefabExample()
+    private void CreateLaserExample()
     {
         GameObject laser = GameObject.CreatePrimitive(PrimitiveType.Cube);
         laser.name = "LaserExample_RED";
