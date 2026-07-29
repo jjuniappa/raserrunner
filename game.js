@@ -216,7 +216,6 @@
 
     const token = ++state.countdownToken;
     ui.countdownPanel.classList.remove("hidden");
-
     showCountdownStep(3, token);
 
     window.setTimeout(() => showCountdownStep(2, token), 1000);

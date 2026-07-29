@@ -1,4 +1,4 @@
-Laser Runner assets build v8
-- removed evade timing cue during gameplay
-- kept 3-2-1 start countdown
-- retained v7 laser/player layer behavior
+Laser Runner assets build v9
+- rebuilt from v7
+- removed only gameplay evade timing cue
+- preserved start countdown and game start
