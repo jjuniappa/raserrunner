@@ -30,11 +30,6 @@
     collisionProgress: 0.91,
     collisionWindow: 0.055,
 
-    tutorialObstacleCount: 3,
-    tutorialCueStart: 0.90,
-    tutorialCueTwo: 0.60,
-    tutorialCueOne: 0.30,
-
     swipeThreshold: 82,
     tapMoveTolerance: 34,
     tapMaxMs: 320,
@@ -54,8 +49,6 @@
     loading: document.getElementById("loading"),
     countdownPanel: document.getElementById("countdown-panel"),
     countdownNumber: document.getElementById("countdown-number"),
-    evadeCue: document.getElementById("evade-cue"),
-    evadeCueNumber: document.getElementById("evade-cue-number"),
     finalTime: document.getElementById("final-time"),
     finalScore: document.getElementById("final-score"),
     start: document.getElementById("start"),
@@ -101,8 +94,6 @@
     gameOver: false,
     countingDown: false,
     countdownToken: 0,
-    spawnedObstacleCount: 0,
-    activeTutorialStage: 0,
     elapsed: 0,
     score: 0,
     best: Number(localStorage.getItem("laserRunnerBest") || 0),
@@ -186,8 +177,6 @@
     state.score = 0;
     state.spawnTimer = 1.0;
     state.walkwayTime = 0;
-    state.spawnedObstacleCount = 0;
-    state.activeTutorialStage = 0;
     state.player.action = "run";
     state.player.actionTime = 0;
     state.player.animTime = 0;
@@ -198,7 +187,6 @@
     ui.startPanel.classList.add("hidden");
     ui.gameOverPanel.classList.add("hidden");
     ui.pausePanel.classList.add("hidden");
-    ui.evadeCue.className = "evade-cue hidden";
     ui.pause.textContent = "Ⅱ";
 
     draw();
@@ -228,7 +216,6 @@
 
     const token = ++state.countdownToken;
     ui.countdownPanel.classList.remove("hidden");
-    setTutorialCue(0);
 
     showCountdownStep(3, token);
 
@@ -244,7 +231,6 @@
     state.countingDown = false;
     state.gameOver = true;
     state.countdownToken += 1;
-    setTutorialCue(0);
     ui.countdownPanel.classList.add("hidden");
     state.score = Math.floor(state.elapsed * 100);
 
@@ -284,18 +270,11 @@
   }
 
   function spawnObstacle() {
-    const tutorialOrder = state.spawnedObstacleCount < CONFIG.tutorialObstacleCount
-      ? state.spawnedObstacleCount + 1
-      : 0;
-
     state.obstacles.push({
       type: Math.random() < 0.5 ? "low" : "high",
       progress: 0,
-      checked: false,
-      tutorialOrder
+      checked: false
     });
-
-    state.spawnedObstacleCount += 1;
   }
 
   function perspective(progress) {
@@ -400,61 +379,6 @@
     );
   }
 
-  function setTutorialCue(stage) {
-    if (state.activeTutorialStage === stage) return;
-    state.activeTutorialStage = stage;
-
-    if (stage === 0) {
-      ui.evadeCue.className = "evade-cue hidden";
-      return;
-    }
-
-    ui.evadeCueNumber.textContent = String(stage);
-    ui.evadeCue.className = `evade-cue cue-${stage}`;
-
-    ui.evadeCueNumber.style.animation = "none";
-    void ui.evadeCueNumber.offsetWidth;
-    ui.evadeCueNumber.style.animation = "";
-  }
-
-  function updateTutorialCue(speed) {
-    const obstacle = state.obstacles
-      .filter(item =>
-        item.tutorialOrder > 0 &&
-        item.progress < CONFIG.collisionProgress
-      )
-      .sort((a, b) => b.progress - a.progress)[0];
-
-    if (!obstacle || speed <= 0) {
-      setTutorialCue(0);
-      return;
-    }
-
-    const timeToCollision =
-      (CONFIG.collisionProgress - obstacle.progress) / speed;
-
-    let stage = 0;
-
-    if (
-      timeToCollision <= CONFIG.tutorialCueStart &&
-      timeToCollision > CONFIG.tutorialCueTwo
-    ) {
-      stage = 3;
-    } else if (
-      timeToCollision <= CONFIG.tutorialCueTwo &&
-      timeToCollision > CONFIG.tutorialCueOne
-    ) {
-      stage = 2;
-    } else if (
-      timeToCollision <= CONFIG.tutorialCueOne &&
-      timeToCollision > 0
-    ) {
-      stage = 1;
-    }
-
-    setTutorialCue(stage);
-  }
-
   function update(dt) {
     state.elapsed += dt;
     state.score = Math.floor(state.elapsed * 100);
@@ -509,8 +433,6 @@
     }
 
     state.obstacles = state.obstacles.filter(o => o.progress < 1.12);
-
-    updateTutorialCue(speed);
 
     ui.time.textContent = state.elapsed.toFixed(2).padStart(5, "0");
     ui.score.textContent = state.score.toLocaleString("ko-KR");

@@ -1,4 +1,4 @@
-Laser Runner assets build v6
-- evade timing countdown for first three lasers
-- 3/2/1 shown based on time to collision
-- tutorial cue disabled after third laser
+Laser Runner assets build v8
+- removed evade timing cue during gameplay
+- kept 3-2-1 start countdown
+- retained v7 laser/player layer behavior

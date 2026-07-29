@@ -58,48 +58,6 @@ button { font: inherit; }
 }
 
 
-.evade-cue {
-  position: absolute;
-  z-index: 18;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-}
-.evade-cue.hidden { display: none; }
-.evade-cue strong {
-  font-size: clamp(96px, 29vw, 190px);
-  font-weight: 1000;
-  line-height: 1;
-  transform-origin: center;
-  text-shadow:
-    0 5px 0 rgba(0, 0, 0, .48),
-    0 0 18px currentColor,
-    0 0 48px currentColor;
-}
-.evade-cue.cue-3 strong {
-  color: #ffffff;
-  animation: evade-pulse .30s ease-out both;
-}
-.evade-cue.cue-2 strong {
-  color: #ffd43b;
-  animation: evade-pulse .30s ease-out both;
-}
-.evade-cue.cue-1 strong {
-  color: #ff3434;
-  animation: evade-pulse-urgent .30s ease-out both;
-}
-@keyframes evade-pulse {
-  0% { opacity: 0; transform: scale(.65); }
-  32% { opacity: 1; transform: scale(1.10); }
-  100% { opacity: 1; transform: scale(1); }
-}
-@keyframes evade-pulse-urgent {
-  0% { opacity: 0; transform: scale(.70); }
-  35% { opacity: 1; transform: scale(1.22); }
-  100% { opacity: 1; transform: scale(1.08); }
-}
-
 .countdown-overlay {
   position: absolute;
   z-index: 20;
