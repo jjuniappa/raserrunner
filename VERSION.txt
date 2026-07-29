@@ -1,0 +1,4 @@
+Laser Runner assets build v3
+- corrected high-laser collision height
+- removed jump/slide buttons
+- added projected laser shadow
