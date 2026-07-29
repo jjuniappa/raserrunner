@@ -452,7 +452,15 @@
 
       if (!obstacle.checked && crossedPlayer) {
         obstacle.checked = true;
-        if (overlap(playerHitbox, getLaserHitbox(obstacle))) {
+
+        const laserHitbox = getLaserHitbox(obstacle);
+
+        // 낮은 레이저는 달리기와 슬라이딩으로 피할 수 없다.
+        // 점프 상태에서만 실제 위치/히트박스로 회피 여부를 판정한다.
+        const hitLowLaserWithoutJump =
+          obstacle.type === "low" && state.player.action !== "jump";
+
+        if (hitLowLaserWithoutJump || overlap(playerHitbox, laserHitbox)) {
           gameOver();
           return;
         }
