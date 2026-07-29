@@ -423,10 +423,7 @@
       }
     }
 
-    const speed = Math.min(
-      CONFIG.obstacleStartSpeed + state.elapsed * CONFIG.obstacleAcceleration,
-      CONFIG.obstacleMaxSpeed
-    );
+    const speed = CONFIG.obstacleStartSpeed + state.elapsed * CONFIG.obstacleAcceleration;
 
     state.spawnTimer -= dt;
     if (state.spawnTimer <= 0) {
