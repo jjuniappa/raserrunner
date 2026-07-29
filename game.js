@@ -19,18 +19,20 @@
     jumpHeight: 360,
     slideDuration: 0.72,
 
-    obstacleStartSpeed: 0.20,
-    obstacleAcceleration: 0.0065,
-    obstacleMaxSpeed: 0.56,
+    obstacleStartSpeed: 0.34,
+    obstacleAcceleration: 0.009,
+    obstacleMaxSpeed: 0.72,
 
-    spawnStart: 2.05,
-    spawnMin: 0.82,
-    spawnDecrease: 0.012,
+    spawnStart: 1.55,
+    spawnMin: 0.68,
+    spawnDecrease: 0.014,
 
     collisionProgress: 0.91,
     collisionWindow: 0.055,
 
-    swipeThreshold: 90,
+    swipeThreshold: 82,
+    tapMoveTolerance: 34,
+    tapMaxMs: 320,
     swipeMaxMs: 650
   };
 
@@ -303,10 +305,13 @@
     const gunW = assets.gunLeft.width * g.scale;
     const gunH = assets.gunLeft.height * g.scale;
 
-    // 낮은 빔은 다리 높이, 높은 빔은 상체 높이.
+    // 낮은 빔: 무빙워크 표면 바로 위, 점프로 회피.
+    // 높은 빔: 캐릭터 머리/상체 높이, 슬라이딩으로 회피.
+    // 원근 스케일이 작을 때도 두 위치가 겹쳐 보이지 않도록
+    // 고정 오프셋과 원근 오프셋을 함께 사용한다.
     const beamY = obstacle.type === "low"
-      ? g.y - 28 * g.scale
-      : g.y - 205 * g.scale;
+      ? g.y - (10 + 34 * g.scale)
+      : g.y - (145 + 245 * g.scale);
 
     return {
       ...g,
@@ -423,25 +428,30 @@
     const beamEndX = g.rightX - g.gunW * 0.32;
 
     ctx.save();
-    ctx.shadowColor = "rgba(255, 20, 20, .95)";
-    ctx.shadowBlur = Math.max(10, 34 * g.scale);
+    ctx.shadowColor = "rgba(255, 20, 20, .98)";
+    ctx.shadowBlur = Math.max(12, 40 * g.scale);
 
-    ctx.strokeStyle = "rgba(255, 40, 40, .38)";
-    ctx.lineWidth = g.beamThickness * 2.4;
+    // 높은 레이저는 조금 더 굵게 보여 두 패턴을 빠르게 구분한다.
+    const visualThickness = obstacle.type === "high"
+      ? g.beamThickness * 1.22
+      : g.beamThickness;
+
+    ctx.strokeStyle = "rgba(255, 40, 40, .42)";
+    ctx.lineWidth = visualThickness * 2.5;
     ctx.beginPath();
     ctx.moveTo(beamStartX, g.beamY);
     ctx.lineTo(beamEndX, g.beamY);
     ctx.stroke();
 
     ctx.strokeStyle = "#ff1515";
-    ctx.lineWidth = g.beamThickness;
+    ctx.lineWidth = visualThickness;
     ctx.beginPath();
     ctx.moveTo(beamStartX, g.beamY);
     ctx.lineTo(beamEndX, g.beamY);
     ctx.stroke();
 
     ctx.strokeStyle = "#fff3f3";
-    ctx.lineWidth = Math.max(1.5, g.beamThickness * 0.22);
+    ctx.lineWidth = Math.max(1.5, visualThickness * 0.22);
     ctx.beginPath();
     ctx.moveTo(beamStartX, g.beamY);
     ctx.lineTo(beamEndX, g.beamY);
@@ -526,14 +536,33 @@
     const dx = event.clientX - swipeStart.x;
     const dy = event.clientY - swipeStart.y;
     const elapsed = performance.now() - swipeStart.time;
+    const distance = Math.hypot(dx, dy);
 
+    const swipeThreshold = CONFIG.swipeThreshold * fitScale;
+    const tapTolerance = CONFIG.tapMoveTolerance * fitScale;
+
+    // 아래 방향 스와이프만 슬라이딩으로 처리한다.
     if (
       elapsed <= CONFIG.swipeMaxMs &&
-      Math.abs(dy) >= CONFIG.swipeThreshold * fitScale &&
+      dy >= swipeThreshold &&
       Math.abs(dy) > Math.abs(dx)
     ) {
-      if (dy < 0) jump();
-      else slide();
+      slide();
+    }
+    // 이동 거리가 짧은 일반 터치는 점프로 처리한다.
+    else if (
+      elapsed <= CONFIG.tapMaxMs &&
+      distance <= tapTolerance
+    ) {
+      jump();
+    }
+    // 위 스와이프도 점프로 허용해 조작 실수를 줄인다.
+    else if (
+      elapsed <= CONFIG.swipeMaxMs &&
+      dy <= -swipeThreshold &&
+      Math.abs(dy) > Math.abs(dx)
+    ) {
+      jump();
     }
 
     swipeStart = null;
