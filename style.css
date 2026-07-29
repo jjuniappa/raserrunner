@@ -56,33 +56,6 @@ button { font: inherit; }
   color: #fff;
   font-weight: 900;
 }
-#controls {
-  position: absolute;
-  z-index: 5;
-  left: max(16px, env(safe-area-inset-left));
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  display: flex;
-  justify-content: space-between;
-  pointer-events: none;
-}
-.control-button {
-  width: min(36vw, 180px);
-  min-height: 68px;
-  border: 2px solid rgba(255,255,255,.82);
-  border-radius: 18px;
-  background: rgba(4,10,18,.68);
-  color: #fff;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  pointer-events: auto;
-  backdrop-filter: blur(4px);
-}
-.control-button b { font-size: 30px; }
-.control-button:active { transform: scale(.97); background: rgba(255,140,0,.45); }
 .overlay {
   position: absolute;
   z-index: 10;

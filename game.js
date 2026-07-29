@@ -52,9 +52,7 @@
     start: document.getElementById("start"),
     restart: document.getElementById("restart"),
     pause: document.getElementById("pause"),
-    resume: document.getElementById("resume"),
-    jump: document.getElementById("jump"),
-    slide: document.getElementById("slide")
+    resume: document.getElementById("resume")
   };
 
   const assetPaths = {
@@ -305,13 +303,12 @@
     const gunW = assets.gunLeft.width * g.scale;
     const gunH = assets.gunLeft.height * g.scale;
 
-    // 낮은 빔: 무빙워크 표면 바로 위, 점프로 회피.
-    // 높은 빔: 캐릭터 머리/상체 높이, 슬라이딩으로 회피.
-    // 원근 스케일이 작을 때도 두 위치가 겹쳐 보이지 않도록
-    // 고정 오프셋과 원근 오프셋을 함께 사용한다.
+    // 낮은 빔은 발목/종아리 높이로 지나가므로 점프해야 한다.
+    // 높은 빔은 서 있는 캐릭터의 허리~가슴을 가로지르지만
+    // 슬라이딩 캐릭터의 히트박스 위로 지나가도록 맞춘다.
     const beamY = obstacle.type === "low"
-      ? g.y - (10 + 34 * g.scale)
-      : g.y - (145 + 245 * g.scale);
+      ? g.y - (12 + 36 * g.scale)
+      : g.y - (74 + 118 * g.scale);
 
     return {
       ...g,
@@ -414,6 +411,37 @@
     ctx.drawImage(image, x, y);
   }
 
+  function drawLaserShadow(obstacle) {
+    const g = getObstacleGeometry(obstacle);
+
+    // 빔이 무빙워크 바닥에 투영된 것처럼 보이는 붉은 그림자.
+    // 실제 충돌 판정에는 영향을 주지 않고 거리/접근 방향만 보여준다.
+    const shadowY = g.y + 12 * g.scale;
+    const startX = g.leftX + g.gunW * 0.30;
+    const endX = g.rightX - g.gunW * 0.30;
+    const shadowThickness = Math.max(5, g.beamThickness * 0.82);
+
+    ctx.save();
+    ctx.globalAlpha = obstacle.type === "high" ? 0.34 : 0.46;
+    ctx.strokeStyle = "#b70f0f";
+    ctx.shadowColor = "rgba(255, 20, 20, .48)";
+    ctx.shadowBlur = Math.max(6, 22 * g.scale);
+    ctx.lineWidth = shadowThickness;
+    ctx.beginPath();
+    ctx.moveTo(startX, shadowY);
+    ctx.lineTo(endX, shadowY);
+    ctx.stroke();
+
+    // 그림자를 살짝 아래쪽으로 퍼뜨려 바닥 투영처럼 보이게 한다.
+    ctx.globalAlpha *= 0.42;
+    ctx.lineWidth = shadowThickness * 2.2;
+    ctx.beginPath();
+    ctx.moveTo(startX, shadowY + 7 * g.scale);
+    ctx.lineTo(endX, shadowY + 7 * g.scale);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawObstacle(obstacle) {
     const g = getObstacleGeometry(obstacle);
 
@@ -497,6 +525,7 @@
 
     // 먼 장애물부터 먼저 그려 원근 겹침 순서를 유지.
     const sorted = [...state.obstacles].sort((a, b) => a.progress - b.progress);
+    for (const obstacle of sorted) drawLaserShadow(obstacle);
     for (const obstacle of sorted) drawObstacle(obstacle);
 
     drawPlayer();
@@ -582,15 +611,6 @@
   ui.restart.addEventListener("click", resetGame);
   ui.pause.addEventListener("click", () => togglePause());
   ui.resume.addEventListener("click", () => togglePause(false));
-
-  ui.jump.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    jump();
-  });
-  ui.slide.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    slide();
-  });
 
   window.addEventListener("keydown", event => {
     if (event.code === "Space" || event.code === "ArrowUp") jump();
