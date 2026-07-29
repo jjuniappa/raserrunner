@@ -30,6 +30,11 @@
     collisionProgress: 0.91,
     collisionWindow: 0.055,
 
+    tutorialObstacleCount: 3,
+    tutorialCueStart: 0.90,
+    tutorialCueTwo: 0.60,
+    tutorialCueOne: 0.30,
+
     swipeThreshold: 82,
     tapMoveTolerance: 34,
     tapMaxMs: 320,
@@ -47,6 +52,10 @@
     gameOverPanel: document.getElementById("game-over-panel"),
     pausePanel: document.getElementById("pause-panel"),
     loading: document.getElementById("loading"),
+    countdownPanel: document.getElementById("countdown-panel"),
+    countdownNumber: document.getElementById("countdown-number"),
+    evadeCue: document.getElementById("evade-cue"),
+    evadeCueNumber: document.getElementById("evade-cue-number"),
     finalTime: document.getElementById("final-time"),
     finalScore: document.getElementById("final-score"),
     start: document.getElementById("start"),
@@ -90,6 +99,10 @@
     running: false,
     paused: false,
     gameOver: false,
+    countingDown: false,
+    countdownToken: 0,
+    spawnedObstacleCount: 0,
+    activeTutorialStage: 0,
     elapsed: 0,
     score: 0,
     best: Number(localStorage.getItem("laserRunnerBest") || 0),
@@ -164,33 +177,75 @@
     ctx.restore();
   }
 
-  function resetGame() {
-    state.running = true;
+  function prepareGame() {
+    state.running = false;
     state.paused = false;
     state.gameOver = false;
+    state.countingDown = true;
     state.elapsed = 0;
     state.score = 0;
-    state.spawnTimer = 1.25;
+    state.spawnTimer = 1.0;
     state.walkwayTime = 0;
+    state.spawnedObstacleCount = 0;
+    state.activeTutorialStage = 0;
     state.player.action = "run";
     state.player.actionTime = 0;
     state.player.animTime = 0;
     state.obstacles.length = 0;
-    state.lastTime = performance.now();
 
+    ui.time.textContent = "00.00";
+    ui.score.textContent = "0";
     ui.startPanel.classList.add("hidden");
     ui.gameOverPanel.classList.add("hidden");
     ui.pausePanel.classList.add("hidden");
+    ui.evadeCue.className = "evade-cue hidden";
     ui.pause.textContent = "Ⅱ";
 
+    draw();
+  }
+
+  function beginRunAfterCountdown(token) {
+    if (token !== state.countdownToken) return;
+
+    state.countingDown = false;
+    state.running = true;
+    state.lastTime = performance.now();
+    ui.countdownPanel.classList.add("hidden");
     requestAnimationFrame(loop);
+  }
+
+  function showCountdownStep(value, token) {
+    if (token !== state.countdownToken) return;
+
+    ui.countdownNumber.textContent = String(value);
+    ui.countdownNumber.style.animation = "none";
+    void ui.countdownNumber.offsetWidth;
+    ui.countdownNumber.style.animation = "";
+  }
+
+  function resetGame() {
+    prepareGame();
+
+    const token = ++state.countdownToken;
+    ui.countdownPanel.classList.remove("hidden");
+    setTutorialCue(0);
+
+    showCountdownStep(3, token);
+
+    window.setTimeout(() => showCountdownStep(2, token), 1000);
+    window.setTimeout(() => showCountdownStep(1, token), 2000);
+    window.setTimeout(() => beginRunAfterCountdown(token), 3000);
   }
 
   function gameOver() {
     if (state.gameOver) return;
 
     state.running = false;
+    state.countingDown = false;
     state.gameOver = true;
+    state.countdownToken += 1;
+    setTutorialCue(0);
+    ui.countdownPanel.classList.add("hidden");
     state.score = Math.floor(state.elapsed * 100);
 
     if (state.score > state.best) {
@@ -207,7 +262,7 @@
   }
 
   function togglePause(force) {
-    if (!state.running || state.gameOver) return;
+    if (!state.running || state.gameOver || state.countingDown) return;
     state.paused = typeof force === "boolean" ? force : !state.paused;
     ui.pausePanel.classList.toggle("hidden", !state.paused);
     ui.pause.textContent = state.paused ? "▶" : "Ⅱ";
@@ -229,11 +284,18 @@
   }
 
   function spawnObstacle() {
+    const tutorialOrder = state.spawnedObstacleCount < CONFIG.tutorialObstacleCount
+      ? state.spawnedObstacleCount + 1
+      : 0;
+
     state.obstacles.push({
       type: Math.random() < 0.5 ? "low" : "high",
       progress: 0,
-      checked: false
+      checked: false,
+      tutorialOrder
     });
+
+    state.spawnedObstacleCount += 1;
   }
 
   function perspective(progress) {
@@ -338,6 +400,61 @@
     );
   }
 
+  function setTutorialCue(stage) {
+    if (state.activeTutorialStage === stage) return;
+    state.activeTutorialStage = stage;
+
+    if (stage === 0) {
+      ui.evadeCue.className = "evade-cue hidden";
+      return;
+    }
+
+    ui.evadeCueNumber.textContent = String(stage);
+    ui.evadeCue.className = `evade-cue cue-${stage}`;
+
+    ui.evadeCueNumber.style.animation = "none";
+    void ui.evadeCueNumber.offsetWidth;
+    ui.evadeCueNumber.style.animation = "";
+  }
+
+  function updateTutorialCue(speed) {
+    const obstacle = state.obstacles
+      .filter(item =>
+        item.tutorialOrder > 0 &&
+        item.progress < CONFIG.collisionProgress
+      )
+      .sort((a, b) => b.progress - a.progress)[0];
+
+    if (!obstacle || speed <= 0) {
+      setTutorialCue(0);
+      return;
+    }
+
+    const timeToCollision =
+      (CONFIG.collisionProgress - obstacle.progress) / speed;
+
+    let stage = 0;
+
+    if (
+      timeToCollision <= CONFIG.tutorialCueStart &&
+      timeToCollision > CONFIG.tutorialCueTwo
+    ) {
+      stage = 3;
+    } else if (
+      timeToCollision <= CONFIG.tutorialCueTwo &&
+      timeToCollision > CONFIG.tutorialCueOne
+    ) {
+      stage = 2;
+    } else if (
+      timeToCollision <= CONFIG.tutorialCueOne &&
+      timeToCollision > 0
+    ) {
+      stage = 1;
+    }
+
+    setTutorialCue(stage);
+  }
+
   function update(dt) {
     state.elapsed += dt;
     state.score = Math.floor(state.elapsed * 100);
@@ -393,6 +510,8 @@
 
     state.obstacles = state.obstacles.filter(o => o.progress < 1.12);
 
+    updateTutorialCue(speed);
+
     ui.time.textContent = state.elapsed.toFixed(2).padStart(5, "0");
     ui.score.textContent = state.score.toLocaleString("ko-KR");
   }
@@ -442,15 +561,8 @@
     ctx.restore();
   }
 
-  function drawObstacle(obstacle) {
+  function drawObstacleBeam(obstacle) {
     const g = getObstacleGeometry(obstacle);
-
-    const leftGunX = g.leftX - g.gunW * 0.52;
-    const rightGunX = g.rightX - g.gunW * 0.48;
-    const gunY = g.beamY - g.gunH * 0.5;
-
-    ctx.drawImage(assets.gunLeft, leftGunX, gunY, g.gunW, g.gunH);
-    ctx.drawImage(assets.gunRight, rightGunX, gunY, g.gunW, g.gunH);
 
     const beamStartX = g.leftX + g.gunW * 0.32;
     const beamEndX = g.rightX - g.gunW * 0.32;
@@ -525,10 +637,28 @@
 
     // 먼 장애물부터 먼저 그려 원근 겹침 순서를 유지.
     const sorted = [...state.obstacles].sort((a, b) => a.progress - b.progress);
+    const lowObstacles = sorted.filter(o => o.type === "low");
+    const highObstacles = sorted.filter(o => o.type === "high");
+
     for (const obstacle of sorted) drawLaserShadow(obstacle);
-    for (const obstacle of sorted) drawObstacle(obstacle);
+
+    // 발사기는 항상 뒤
+    for (const obstacle of sorted) {
+      const g = getObstacleGeometry(obstacle);
+      const leftGunX = g.leftX - g.gunW * 0.52;
+      const rightGunX = g.rightX - g.gunW * 0.48;
+      const gunY = g.beamY - g.gunH * 0.5;
+      ctx.drawImage(assets.gunLeft, leftGunX, gunY, g.gunW, g.gunH);
+      ctx.drawImage(assets.gunRight, rightGunX, gunY, g.gunW, g.gunH);
+    }
+
+    // 낮은 레이저 빔
+    for (const obstacle of lowObstacles) drawObstacleBeam(obstacle);
 
     drawPlayer();
+
+    // 높은 레이저 빔
+    for (const obstacle of highObstacles) drawObstacleBeam(obstacle);
     endVirtualDraw();
   }
 
